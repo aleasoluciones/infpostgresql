@@ -1,0 +1,10 @@
+Metadata-Version: 2.1
+Name: mysql-wrapper
+Version: 0.0.1
+Summary: Simple mysql wrapper
+Home-page: UNKNOWN
+Author: Bifer Team
+License: UNKNOWN
+Description: UNKNOWN
+Platform: Linux
+Provides-Extra: dev

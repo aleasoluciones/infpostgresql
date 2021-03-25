@@ -1,0 +1,13 @@
+# Postgresql
+local_db_postgresql:
+  image: postgres:12.6
+  restart: always
+  ports:
+   - "5433:5432"
+  environment:
+    - POSTGRES_USER=user
+    - POSTGRES_PASSWORD=password
+    - POSTGRES_DB=local
+  volumes:
+   - ./local_postgresql_configuration:/docker-entrypoint-initdb.d:ro
+   - /etc/localtime:/etc/localtime:ro

@@ -1,0 +1,9 @@
+README.md
+setup.py
+postgresql_wrapper/__init__.py
+postgresql_wrapper/client.py
+postgresql_wrapper.egg-info/PKG-INFO
+postgresql_wrapper.egg-info/SOURCES.txt
+postgresql_wrapper.egg-info/dependency_links.txt
+postgresql_wrapper.egg-info/requires.txt
+postgresql_wrapper.egg-info/top_level.txt
