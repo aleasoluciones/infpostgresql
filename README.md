@@ -1,4 +1,4 @@
-## Mysql Wrapper
+## Postgresql Wrapper
 
 ### For local development
 
