@@ -7,11 +7,9 @@ class PostgresClient:
         self._db_uri = db_uri
         self._connection = None
         self._cursor_factory = cursor_factory
-        print("DBURI: "+ self._db_uri +" " +db_uri)
 
     def execute(self, query, args=None):
         result = []
-        print("query" +query)
         with self._cursor() as my_cursor:
        	    my_cursor.execute(query, args)
             try:

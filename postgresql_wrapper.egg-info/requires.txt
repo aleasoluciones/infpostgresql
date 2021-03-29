@@ -1,5 +1,0 @@
-psycopg2==2.8.6
-retrying==1.3.3
-
-[dev]
-packaging@ https://github.com/aleasoluciones/pydevlib.git#egg=pydevlib

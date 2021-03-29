@@ -10,6 +10,4 @@ with description('PostgresqlClient specs'):
         with it('set db_uri'):
             self.sut = PostgresClient(db_uri='updated_db_uri')
 
-           # self.sut.set_db_uri('updated_db_uri')
-
             expect(self.sut._db_uri).to(equal('updated_db_uri'))
