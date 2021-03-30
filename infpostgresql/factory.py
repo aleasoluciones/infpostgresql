@@ -1,7 +1,7 @@
 import os
 import psycopg2.extras
 
-from infopostgresql.client import PostgresClient
+from infpostgresql.client import PostgresClient
 
 from infcommon.factory import Factory
 
