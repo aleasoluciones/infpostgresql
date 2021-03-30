@@ -1,5 +1,5 @@
 export DOCKER_HOST_IP=127.0.0.1
-export LOCAL_DB_PORT=5433
+export LOCAL_DB_PORT=5439
 export DOCKER_COMPOSE_ETC='./dev/devdocker/'
 export TEST_MODE=1
 export CONF_FILE=/tmp/

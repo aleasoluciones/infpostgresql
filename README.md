@@ -1,4 +1,4 @@
-## Postgresql Wrapper
+## infpostgresq
 
 ### For local development
 

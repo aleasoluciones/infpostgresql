@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-setup(name="postgresql_wrapper",
+setup(name="infpostgresql",
       version="0.0.1",
       author="Bifer Team",
       description="Simple postgres wrapper",

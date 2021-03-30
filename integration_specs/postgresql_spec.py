@@ -2,11 +2,11 @@ from mamba import description, context, it
 from expects import expect, be, have_len, be_above, equal
 
 import os
-from postgresql_wrapper import client
+from infpostgresql import client
 
 
 TEST_TABLE = 'local'
-LOCAL_DB_URI='postgres://user:password@localhost:5433/local'
+LOCAL_DB_URI='postgres://user:password@localhost:5439/local'
 
 
 with description('PostgresClientTest'):
