@@ -2,7 +2,7 @@ from mamba import description, context, it
 from expects import expect, equal
 
 
-from postgresql_wrapper.client import PostgresClient
+from infpostgresql.client import PostgresClient
 
 
 with description('PostgresqlClient specs'):
