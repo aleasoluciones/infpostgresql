@@ -24,6 +24,12 @@ dev/start_local_dependencies.sh
 
 Note that project uses Alea's [pydevlib](https://github.com/aleasoluciones/pydevlib), so take a look at its README to see the available commands.
 
+## Internals
+
+In the `execute()` method of the `PostgresClient` class, we're enclosing the `cursor.fetchall()` call in a try-except block. The reason is that that method only makes sense if the database returns data. Otherwise it will throw a `ProgrammingError` exception, which we intercept. Any other exception is allowed to bubble up, so we can still know what's wrong from the outside.
+
+This design is for the sake of homogeneity, so we can aways use the `execute()` method the same, no matter what kind of SQL statement is being executed.
+
 ## infpostgresql client API
 
 Below is described the public API that this library provides.
@@ -49,7 +55,7 @@ Executes a SQL query and returns the result. Passing parameters is possible by u
 
 `list<tuple<any>>`
 
-💥 Throws the pycopg2 exceptions.
+💥 Throws any Postgres error converted to CamelCase (available [here](https://www.postgresql.org/docs/12/errcodes-appendix.html), some examples in the [integration tests](integration_specs/postgresql_spec.py)).
 
 #### Usage example
 
@@ -80,7 +86,7 @@ Executes multiple SQL queries. Each query can be sent along with their parameter
 
 `None`
 
-💥 Throws the pycopg2 exceptions.
+💥 Throws any Postgres error converted to CamelCase (available [here](https://www.postgresql.org/docs/12/errcodes-appendix.html), some examples in the [integration tests](integration_specs/postgresql_spec.py)).
 
 #### Usage example
 

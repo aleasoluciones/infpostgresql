@@ -11,7 +11,7 @@ class PostgresClient:
     def execute(self, query, args=None):
         result = []
         with self._cursor() as my_cursor:
-       	    my_cursor.execute(query, args)
+            my_cursor.execute(query, args)
             try:
                 result = my_cursor.fetchall()
 

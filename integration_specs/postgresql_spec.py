@@ -1,13 +1,12 @@
 from mamba import description, context, before, it
-from expects import expect, have_len, equal, raise_error
+from expects import expect, have_len, equal, contain, raise_error
 
 import datetime
 import os
 
-from psycopg2 import errors
+from psycopg2 import errors as psycopg2_errors
 
 from infpostgresql.client import PostgresClient
-
 
 POSTGRES_HOSTNAME = os.getenv('POSTGRES_HOSTNAME')
 POSTGRES_PORT = os.getenv('POSTGRES_PORT')
@@ -19,14 +18,17 @@ POSTGRES_DB_URI = f'postgres://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOS
 
 TEST_TABLE = 'test_table'
 
-
 with description('PostgresClientTest') as self:
     with before.each:
         self.postgresql_client = PostgresClient(POSTGRES_DB_URI)
         self.postgresql_client.execute(f"DROP TABLE IF EXISTS {TEST_TABLE}")
-        self.postgresql_client.execute(f"CREATE TABLE {TEST_TABLE} (id SERIAL, item varchar(10), size INT, active BOOLEAN, date TIMESTAMP, PRIMARY KEY (id));")
-        self.postgresql_client.execute(f"INSERT INTO {TEST_TABLE}(item, size, active, date) VALUES(%s, %s, %s, %s);", ("item_a", 40, False, datetime.datetime.fromtimestamp(100)))
-        self.postgresql_client.execute(f"INSERT INTO {TEST_TABLE}(item, size, active, date) VALUES(%s, %s, %s, %s);", ("item_b", 20, True, datetime.datetime.fromtimestamp(3700)))
+        self.postgresql_client.execute(
+            f"CREATE TABLE {TEST_TABLE} (id SERIAL, item varchar(10), size INT, active BOOLEAN, date TIMESTAMP, PRIMARY KEY (id));"
+        )
+        self.postgresql_client.execute(f"INSERT INTO {TEST_TABLE}(item, size, active, date) VALUES(%s, %s, %s, %s);",
+                                       ("item_a", 40, False, datetime.datetime.fromtimestamp(100)))
+        self.postgresql_client.execute(f"INSERT INTO {TEST_TABLE}(item, size, active, date) VALUES(%s, %s, %s, %s);",
+                                       ("item_b", 20, True, datetime.datetime.fromtimestamp(3700)))
 
     with context('FEATURE: execute'):
         with context('happy path'):
@@ -36,10 +38,11 @@ with description('PostgresClientTest') as self:
 
                     result = self.postgresql_client.execute(query)
 
-                    expect(result).to(equal([
-                        (1, 'item_a', 40, False, datetime.datetime(1970, 1, 1, 1, 1, 40)),
-                        (2, 'item_b', 20, True, datetime.datetime(1970, 1, 1, 2, 1, 40)),
-                    ]))
+                    expect(result).to(
+                        equal([
+                            (1, 'item_a', 40, False, datetime.datetime(1970, 1, 1, 1, 1, 40)),
+                            (2, 'item_b', 20, True, datetime.datetime(1970, 1, 1, 2, 1, 40)),
+                        ]))
 
             with context('when counting rows'):
                 with it('returns number of values'):
@@ -51,7 +54,7 @@ with description('PostgresClientTest') as self:
             with context('when selecting non-existing rows'):
                 with it('returns empty list'):
                     query = f"SELECT * FROM {TEST_TABLE} WHERE size > %s;"
-                    params = (50, )
+                    params = (50,)
 
                     result = self.postgresql_client.execute(query, params)
 
@@ -60,7 +63,7 @@ with description('PostgresClientTest') as self:
             with context('when deleting a row'):
                 with it('returns empty list'):
                     query = f"DELETE FROM {TEST_TABLE} WHERE active = %s;"
-                    params = (False, )
+                    params = (False,)
 
                     result = self.postgresql_client.execute(query, params)
 
@@ -85,15 +88,46 @@ with description('PostgresClientTest') as self:
                     expect(result).to(equal([]))
 
         with context('unhappy path'):
-            with context('when executing a malformed query'):
-                with it('raises exception from wrapped library'):
+            with context('when executing a query with an invalid column'):
+                with it('raises exception from postgres'):
                     malformed_query = f'UPDATE {TEST_TABLE} SET size = size + %s WHERE {TEST_TABLE}.invalid_column = %s;'
                     params = (10, 'item_a')
 
-                    def _execute_malformed_query():
+                    def _execute_query_with_an_invalid_column():
                         self.postgresql_client.execute(malformed_query, params)
 
-                    expect(_execute_malformed_query).to(raise_error(errors.UndefinedColumn))
+                    expect(_execute_query_with_an_invalid_column).to(
+                        raise_error(psycopg2_errors.UndefinedColumn, contain('column test_table.invalid_column does not exist')))
+
+            with context('when executing a query with an invalid param'):
+                with it('raises exception from postgres'):
+                    query = f'SELECT * FROM {TEST_TABLE} WHERE active = %s;'
+                    invalid_params = ('invalid_param',)
+
+                    def _execute_query_with_an_invalid_param():
+                        self.postgresql_client.execute(query, invalid_params)
+
+                    expect(_execute_query_with_an_invalid_param).to(
+                        raise_error(psycopg2_errors.InvalidTextRepresentation, contain('invalid input syntax')))
+
+            with context('when executing an empty query'):
+                with it('raises exception from postgres'):
+                    empty_query = ''
+
+                    def _execute_empty_query():
+                        self.postgresql_client.execute(empty_query)
+
+                    expect(_execute_empty_query).to(
+                        raise_error(psycopg2_errors.ProgrammingError, contain('can\'t execute an empty query')))
+
+            with context('when executing a malformed query'):
+                with it('raises exception from postgres'):
+                    malformed_query = f"SELEC * FROM {TEST_TABLE}"
+
+                    def _execute_malformed_query():
+                        self.postgresql_client.execute(malformed_query)
+
+                    expect(_execute_malformed_query).to(raise_error(psycopg2_errors.SyntaxError, contain('syntax error')))
 
     with context('FEATURE: execute_with_transactions'):
         with before.each:
@@ -113,16 +147,16 @@ with description('PostgresClientTest') as self:
             with it('executes transaction'):
                 self.postgresql_client.execute_with_transactions([self.operation_1, self.operation_2])
 
-                expect(self.postgresql_client.execute(f"SELECT (size) FROM {TEST_TABLE};")).to(equal([(50, ), (10, )]))
+                expect(self.postgresql_client.execute(f"SELECT (size) FROM {TEST_TABLE};")).to(equal([(50,), (10,)]))
 
         with context('unhappy path'):
             with context('when one of the params is malformed'):
-                with it('raises exception from wrapped library'):
+                with it('raises exception from postgres'):
 
                     def _execute_malformed_query():
                         self.postgresql_client.execute_with_transactions([self.operation_1, self.failing_operation_3])
 
-                    expect(_execute_malformed_query).to(raise_error(errors.InvalidTextRepresentation))
+                    expect(_execute_malformed_query).to(raise_error(psycopg2_errors.InvalidTextRepresentation))
 
                 with it('rolls back any changes made until the failure'):
 
@@ -130,4 +164,4 @@ with description('PostgresClientTest') as self:
                         self.postgresql_client.execute_with_transactions([self.operation_1, self.failing_operation_3])
 
                     expect(_execute_malformed_query).to(raise_error)
-                    expect(self.postgresql_client.execute(f"SELECT (size) FROM {TEST_TABLE};")).to(equal([(40, ), (20, )]))
+                    expect(self.postgresql_client.execute(f"SELECT (size) FROM {TEST_TABLE};")).to(equal([(40,), (20,)]))
