@@ -1,5 +1,5 @@
 from mamba import description, context, before, it
-from expects import expect, have_len, equal, contain, raise_error
+from expects import expect, equal, contain, raise_error
 
 import datetime
 import os
@@ -40,8 +40,8 @@ with description('PostgresClientTest') as self:
 
                     expect(result).to(
                         equal([
-                            (1, 'item_a', 40, False, datetime.datetime(1970, 1, 1, 1, 1, 40)),
-                            (2, 'item_b', 20, True, datetime.datetime(1970, 1, 1, 2, 1, 40)),
+                            (1, 'item_a', 40, False, datetime.datetime.fromtimestamp(100)),
+                            (2, 'item_b', 20, True, datetime.datetime.fromtimestamp(3700)),
                         ]))
 
             with context('when counting rows'):
