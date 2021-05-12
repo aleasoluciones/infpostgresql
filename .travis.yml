@@ -1,0 +1,45 @@
+services:
+  - docker
+
+env:
+  global:
+    - TEST_MODE=1
+    - POSTGRES_HOSTNAME=127.0.0.1
+    - POSTGRES_PORT=5439
+    - POSTGRES_USER=user
+    - POSTGRES_PASSWORD=password
+    - POSTGRES_DB=test_database
+
+os: linux
+
+dist: focal
+
+language: python
+
+python:
+  - '3.7'
+
+branches:
+  only:
+    - master
+
+install:
+  - python setup.py develop
+  - pip install pip --upgrade
+  - pip install -r requirements.txt
+  - pip install -r requirements-dev.txt
+
+before_script:
+  - ./dev/start_local_dependencies.sh
+
+script:
+  - unit_tests
+  - factory_tests
+  - integration_tests
+
+after_script:
+  - ./dev/stop_local_dependencies.sh
+
+notifications:
+  email:
+    - bifer@alea-soluciones.com
