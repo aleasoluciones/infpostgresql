@@ -1,4 +1,7 @@
+import asyncio
+
 import psycopg2 as pg
+from windyquery import DB
 from retrying import retry
 
 
@@ -47,3 +50,24 @@ class PostgresClient:
 
     def _connect(self):
         return pg.connect(self._db_uri, cursor_factory=self._cursor_factory)
+
+
+class AsyncPostgresClient:
+    def __init__(self, db_connection_dto):
+        self._db_connection_dto = db_connection_dto
+        self._connection = None
+        if all(db_connection_dto.values()):
+            asyncio.get_event_loop().run_until_complete(self._connect())
+
+    async def _connect(self):
+        self._connection = DB()
+        await self._connection.connect(self._db_connection_dto['database'], self._db_connection_dto, default=True)
+
+    def get_db_connection(self):
+        return self._connection
+
+    def execute(self, query):
+        return asyncio.get_event_loop().run_until_complete(query)
+
+    def raw_execute(self, query):
+        return asyncio.get_event_loop().run_until_complete(self._connection.raw(query))

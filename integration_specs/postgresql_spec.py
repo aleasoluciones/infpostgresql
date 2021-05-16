@@ -23,11 +23,11 @@ with description('PostgresClientTest') as self:
         self.postgresql_client = PostgresClient(POSTGRES_DB_URI)
         self.postgresql_client.execute(f"DROP TABLE IF EXISTS {TEST_TABLE}")
         self.postgresql_client.execute(
-            f"CREATE TABLE {TEST_TABLE} (id SERIAL, item varchar(10), size INT, active BOOLEAN, date TIMESTAMP, PRIMARY KEY (id));"
+            f"CREATE TABLE {TEST_TABLE} (id SERIAL PRIMARY KEY, item varchar(10), size INT, active BOOLEAN, creation_date TIMESTAMP);"
         )
-        self.postgresql_client.execute(f"INSERT INTO {TEST_TABLE}(item, size, active, date) VALUES(%s, %s, %s, %s);",
+        self.postgresql_client.execute(f"INSERT INTO {TEST_TABLE}(item, size, active, creation_date) VALUES(%s, %s, %s, %s);",
                                        ("item_a", 40, False, datetime.datetime.fromtimestamp(100)))
-        self.postgresql_client.execute(f"INSERT INTO {TEST_TABLE}(item, size, active, date) VALUES(%s, %s, %s, %s);",
+        self.postgresql_client.execute(f"INSERT INTO {TEST_TABLE}(item, size, active, creation_date) VALUES(%s, %s, %s, %s);",
                                        ("item_b", 20, True, datetime.datetime.fromtimestamp(3700)))
 
     with context('FEATURE: execute'):
@@ -71,7 +71,7 @@ with description('PostgresClientTest') as self:
 
             with context('when inserting a row'):
                 with it('returns empty list'):
-                    query = f"INSERT INTO {TEST_TABLE}(item, size, active, date) VALUES(%s, %s, %s, %s);"
+                    query = f"INSERT INTO {TEST_TABLE}(item, size, active, creation_date) VALUES(%s, %s, %s, %s);"
                     params = ("item_c", 60, True, datetime.datetime.fromtimestamp(11000))
 
                     result = self.postgresql_client.execute(query, params)
