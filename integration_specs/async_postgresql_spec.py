@@ -13,7 +13,7 @@ POSTGRES_USER = os.getenv('POSTGRES_USER')
 POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
 POSTGRES_DB = os.getenv('POSTGRES_DB')
 
-POSTGRES_DB_CONNECTION = {
+POSTGRES_DB_CONNECTION_CONFIG = {
     'username': POSTGRES_USER,
     'password': POSTGRES_PASSWORD,
     'host': POSTGRES_HOSTNAME,
@@ -23,9 +23,9 @@ POSTGRES_DB_CONNECTION = {
 
 TEST_TABLE = 'test_table'
 
-with description('PostgresClientTest') as self:
+with description('AsyncPostgresClient Specs') as self:
     with before.each:
-        self.postgresql_client = AsyncPostgresClient(POSTGRES_DB_CONNECTION)
+        self.postgresql_client = AsyncPostgresClient(POSTGRES_DB_CONNECTION_CONFIG)
         self.db_connection = self.postgresql_client.get_db_connection()
         self.postgresql_client.execute(self.db_connection.schema(f'TABLE IF EXISTS {TEST_TABLE}').drop())
         self.postgresql_client.execute(self.db_connection.schema(f'TABLE IF EXISTS {TEST_TABLE}').drop())
@@ -61,14 +61,6 @@ with description('PostgresClientTest') as self:
                             (1, 'item_a', 40, False, datetime.datetime.fromtimestamp(100)),
                             (2, 'item_b', 20, True, datetime.datetime.fromtimestamp(3700)),
                         ]))
-
-            with context('when counting rows'):
-                with it('returns number of values'):
-                    query = f"SELECT COUNT(*) FROM {TEST_TABLE}"
-
-                    result = self.postgresql_client.raw_execute(query)
-
-                    expect(result[0][0]).to(equal(2))
 
             with context('when selecting non-existing rows'):
                 with it('returns empty list'):
@@ -130,3 +122,13 @@ with description('PostgresClientTest') as self:
 
                     expect(_execute_query_with_an_invalid_param).to(
                         raise_error(asyncpg_exceptions.InvalidTextRepresentationError, contain('invalid input syntax')))
+
+    with context('FEATURE: raw execute'):
+        with context('happy path'):
+            with context('when counting rows'):
+                with it('returns number of values'):
+                    query = f"SELECT COUNT(*) FROM {TEST_TABLE}"
+
+                    result = self.postgresql_client.raw_execute(query)
+
+                    expect(result[0][0]).to(equal(2))
