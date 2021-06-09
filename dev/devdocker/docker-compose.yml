@@ -1,6 +1,6 @@
 # Postgresql
 local_db_postgresql:
-  image: postgres:12.6
+  image: postgres:13.3
   restart: always
   ports:
    - "${POSTGRES_PORT}:5432"
