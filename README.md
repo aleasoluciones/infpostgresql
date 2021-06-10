@@ -1,6 +1,6 @@
 # infpostgresql
 
-[![Build Status](https://travis-ci.org/aleasoluciones/infpostgresql.svg?branch=master)](https://travis-ci.org/aleasoluciones/infpostgresql)
+[![Build Status](https://travis-ci.com/aleasoluciones/infpostgresql.svg?branch=master)](https://travis-ci.com/aleasoluciones/infpostgresql)
 
 Wrapper for the [psycopg2](https://www.psycopg.org) library using Python 3.7.
 
