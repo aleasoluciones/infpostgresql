@@ -7,7 +7,7 @@ echo
 echo "----------------------------------------------------------------------"
 echo "Starting docker-compose..."
 echo "----------------------------------------------------------------------"
-docker-compose -f dev/devdocker/docker-compose.yml up -d
+docker-compose -f dev/infpostgresql_devdocker/docker-compose.yml up -d
 
 # Wait for ports to be available
 TIMEOUT=30
