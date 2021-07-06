@@ -23,6 +23,22 @@ class PostgresClient:
 
         return result
 
+    def execute_with_lock(self, query, table, args=None):
+        result = []
+        with self._cursor() as my_cursor:
+            my_cursor.execute("BEGIN TRANSACTION;")
+            my_cursor.execute(f"LOCK TABLE {table} IN ACCESS EXCLUSIVE MODE;")
+            my_cursor.execute(query, args)
+            try:
+                result = my_cursor.fetchall()
+                my_cursor.execute("COMMIT TRANSACTION;")
+
+            except pg.ProgrammingError:
+                my_cursor.execute("COMMIT TRANSACTION;")
+                pass
+
+        return result
+
     def execute_with_transactions(self, list_of_queries_with_args):
         with self._cursor(autocommit=False) as my_cursor:
             try:

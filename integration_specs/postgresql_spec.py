@@ -1,9 +1,12 @@
 from mamba import description, context, before, it
 from expects import expect, equal, contain, raise_error
+from doublex import when, Spy
+from doublex_expects import have_been_called_with
 
 import datetime
 import os
 
+import psycopg2
 from psycopg2 import errors as psycopg2_errors
 
 from infpostgresql.client import PostgresClient
@@ -165,3 +168,60 @@ with description('PostgresClientTest') as self:
 
                     expect(_execute_malformed_query).to(raise_error)
                     expect(self.postgresql_client.execute(f"SELECT (size) FROM {TEST_TABLE};")).to(equal([(40,), (20,)]))
+
+    with context('FEATURE: execute with locks'):
+        with before.each:
+            self.fake_cursor = ContextSpy(FakeCursor())
+            fake_connection = FakeConnection(self.fake_cursor)
+            self.postgresql_client = FakePostgresClient(POSTGRES_DB_URI)
+            self.postgresql_client._connection = fake_connection
+            self.query = f"SELECT * FROM {TEST_TABLE};"
+
+        with context('happy path'):
+            with context('when executing a query'):
+                with it('locks table to avoid concurrent access'):
+                    self.postgresql_client.execute_with_lock(self.query, TEST_TABLE)
+
+                    expect(self.fake_cursor.execute).to(have_been_called_with("BEGIN TRANSACTION;"))
+                    expect(self.fake_cursor.execute).to(have_been_called_with(f"LOCK TABLE {TEST_TABLE} IN ACCESS EXCLUSIVE MODE;"))
+                    expect(self.fake_cursor.execute).to(have_been_called_with("COMMIT TRANSACTION;"))
+
+        with context('unhappy path'):
+            with context('when Programming error arises'):
+                with it('commits transaction'):
+                    self.fake_cursor.fetchall = self.fake_cursor.raise_programming_error
+
+                    self.postgresql_client.execute_with_lock(self.query, TEST_TABLE)
+
+                    expect(self.fake_cursor.execute).to(have_been_called_with("COMMIT TRANSACTION;"))
+
+
+class FakePostgresClient(PostgresClient):
+    def _cursor(self):
+        return self._connection.cursor()
+
+
+class FakeConnection:
+    def __init__(self, fake_cursor):
+        self._fake_cursor = fake_cursor
+
+    def cursor(self):
+        return self._fake_cursor
+
+
+class FakeCursor:
+    def execute(self, query, args=None):
+        pass
+
+    def fetchall(self):
+        pass
+
+
+# We have to override __enter__ to avoid problems with doublex context manager (https://github.com/davidvilla/python-doublex/issues/9)
+class ContextSpy(Spy):
+    def __enter__(self):
+        return self
+
+    def raise_programming_error(self):
+        raise psycopg2.ProgrammingError
+
