@@ -1,5 +1,5 @@
 # Postgresql
-local_db_postgresql:
+db:
   image: postgres:13.3
   restart: always
   ports:
