@@ -9,7 +9,7 @@ setup(name="infpostgresql",
       install_requires=[
           'psycopg2==2.8.6',
           'retrying==1.3.3',
-          'windyquery==0.0.20',
+          'windyquery==0.0.28',
       ],
       extras_require={'dev': [
           'packaging@https://github.com/aleasoluciones/pydevlib.git#egg=pydevlib',
