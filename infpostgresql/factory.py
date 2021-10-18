@@ -1,8 +1,8 @@
-import psycopg2.extras
+from psycopg2.extras import DictCursor
 
 from infcommon.factory import Factory
 
-from infpostgresql.client import PostgresClient, AsyncPostgresClient
+from infpostgresql.client import PostgresClient
 
 
 def postgres_client_from_connection_parameters(user=None,
@@ -23,18 +23,5 @@ def _postgres_client(connection_uri=None, use_dict_cursor=None):
 
 def _cursor_factory(use_dict_cursor=None):
     if use_dict_cursor:
-        return psycopg2.extras.DictCursor
+        return DictCursor
     return None
-
-
-def async_postgres_client_from_connection_parameters(user=None, password=None, host=None, port=None, db_name=None):
-    db_connection_dto = {
-        'username': user,
-        'password': password,
-        'host': host,
-        'port': port,
-        'database': db_name,
-    }
-    dto_string = "_".join([str(value) for _, value in db_connection_dto.items()])
-    instance_id = f'postgres_client_{dto_string}'
-    return Factory.instance(instance_id, lambda: AsyncPostgresClient(db_connection_dto))

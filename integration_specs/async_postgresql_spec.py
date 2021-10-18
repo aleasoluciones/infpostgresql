@@ -5,7 +5,7 @@ import datetime
 import os
 
 from asyncpg import exceptions as asyncpg_exceptions
-from infpostgresql.client import AsyncPostgresClient
+from infpostgresql.async_client.client import AsyncPostgresClient
 
 POSTGRES_HOSTNAME = os.getenv('POSTGRES_HOSTNAME')
 POSTGRES_PORT = os.getenv('POSTGRES_PORT')

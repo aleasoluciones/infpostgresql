@@ -224,4 +224,3 @@ class ContextSpy(Spy):
 
     def raise_programming_error(self):
         raise psycopg2.ProgrammingError
-
