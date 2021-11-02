@@ -1,4 +1,1 @@
-psycopg2==2.8.6
-retrying==1.3.3
-windyquery==0.0.28
 -e git+https://github.com/aleasoluciones/infcommon3.git#egg=infcommon
