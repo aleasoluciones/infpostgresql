@@ -1,13 +1,11 @@
 #!/bin/bash
 
 find . -name *pyc* -delete
-source "dev/env_develop"
 
-echo
-echo "----------------------------------------------------------------------"
-echo "Starting docker-compose..."
-echo "----------------------------------------------------------------------"
-docker-compose -f dev/infpostgresql_devdocker/docker-compose.yml up -d
+SCRIPTPATH=`dirname $(realpath $0)`
+. ${SCRIPTPATH}/env_develop
+
+docker-compose -f ${SCRIPTPATH}/infpostgresql_devdocker/docker-compose.yml up -d
 
 # Wait for ports to be available
 TIMEOUT=30
