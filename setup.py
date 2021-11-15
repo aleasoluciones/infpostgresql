@@ -7,7 +7,7 @@ setup(name="infpostgresql",
       platforms="Linux",
       packages=find_packages(exclude=["specs", "integration_specs"]),
       install_requires=[
-          'psycopg2==2.8.6',
+          'psycopg2==2.9.2',
           'retrying==1.3.3',
           'windyquery==0.0.28',
           'infcommon'
