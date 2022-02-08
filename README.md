@@ -39,9 +39,9 @@ Below is described the public API that this library provides.
 
 ### \_\_init\_\_()
 
-The client must be initialized with a database URI.
+The client must be initialized with a database URI and an optional argument `use_dict_cursor` which indicates how the output will be returned.
 
-> postgres_client = **PostgresClient**(*database_uri*)
+> postgres_client = factory.**postgres_client_from_connection_uri**(*database_uri*, *use_dict_cursor=False*)
 
 ### execute()
 
@@ -54,25 +54,48 @@ Executes a SQL query and returns the result. Passing parameters is possible by u
 - **query**: `str`
 - **args** (optional): `tuple<any>`. Defaults to `None`.
 
-⬅️ Returns a list of tuples, each containing a row of results.
-
-`list<tuple<any>>`
+⬅️ Returns a list of tuples or a list of dictionaries, depending on the value of `use_dict_cursor`. Each item contains a row of results.
 
 💥 Throws any Postgres error converted to CamelCase (available [here](https://www.postgresql.org/docs/12/errcodes-appendix.html), some examples in the [integration tests](integration_specs/postgresql_spec.py)).
 
 #### Usage example
 
 ```python
-from infpostgresql.client import PostgresClient
+from infpostgresql import factory
 
-postgres_client = PostgresClient('postgres://username:password@host:port/databasename')
+postgres_uri = 'postgres://username:password@host:port/databasename'
+postgres_client = factory.postgres_client_from_connection_uri(postgres_uri)
 
 query = 'SELECT (name, surname, age) FROM users WHERE age < %s AND active = %s;'
 params = (30, True, )
 
 result = postgres_client.execute(query, params)
 
-# [('Ann', 'White', 18, ), ('Axel', 'Schwarz', 21, ), ('Camille', 'Rouge', '27', )]
+# [
+#   ('Ann', 'White', 18, ),
+#   ('Axel', 'Schwarz', 21, ),
+#   ('Camille', 'Rouge', '27', )
+# ]
+```
+
+#### Another usage example, with the dictionary cursor
+
+```python
+from infpostgresql import factory
+
+postgres_uri = 'postgres://username:password@host:port/databasename'
+postgres_client = factory.postgres_client_from_connection_uri(postgres_uri, use_dict_cursor=True)
+
+query = 'SELECT (name, surname, age) FROM users WHERE age < %s AND active = %s;'
+params = (30, True, )
+
+result = postgres_client.execute(query, params)
+
+# [
+#   {'name: 'Ann', 'surname': 'White', 'age': 18},
+#   {'name': 'Axel', 'surname': 'Schwarz', 'age': 21},
+#   {'name': 'Camille', 'surname': 'Rouge', 'age': '27'}
+# ]
 ```
 
 ### execute_with_transactions()
@@ -87,16 +110,15 @@ Executes multiple SQL queries. Each query can be sent along with their parameter
 
 ⬅️ Returns nothing
 
-`None`
-
 💥 Throws any Postgres error converted to CamelCase (available [here](https://www.postgresql.org/docs/12/errcodes-appendix.html), some examples in the [integration tests](integration_specs/postgresql_spec.py)).
 
 #### Usage example
 
 ```python
-from infpostgresql.client import PostgresClient
+from infpostgresql import factory
 
-postgres_client = PostgresClient('postgres://username:password@host:port/databasename')
+postgres_uri = 'postgres://username:password@host:port/databasename'
+postgres_client = factory.postgres_client_from_connection_uri(postgres_uri)
 
 query_1 = 'UPDATE bank_account SET balance = balance - %s WHERE name = %s;'
 params_1 = (100, 'Jack', )
