@@ -6,9 +6,7 @@ from doublex_expects import have_been_called_with
 import datetime
 import os
 
-import psycopg2
-import psycopg2.extras
-from psycopg2 import errors as psycopg2_errors
+import psycopg
 
 from infpostgresql.client import PostgresClient
 
@@ -130,6 +128,14 @@ with description('PostgresClientTest') as self:
 
                     expect(result[0][0]).to(equal(50))
 
+            with context('when executing an empty query'):
+                with it('returns empty list'):
+                    empty_query = ''
+
+                    result = self.postgresql_client.execute(empty_query)
+
+                    expect(result).to(equal([]))
+
         with context('unhappy path'):
             with context('when executing a query with an invalid column'):
                 with it('raises exception from postgres'):
@@ -140,7 +146,7 @@ with description('PostgresClientTest') as self:
                         self.postgresql_client.execute(malformed_query, params)
 
                     expect(_execute_query_with_an_invalid_column).to(
-                        raise_error(psycopg2_errors.UndefinedColumn, contain('column test_table.invalid_column does not exist')))
+                        raise_error(psycopg.errors.UndefinedColumn, contain('column test_table.invalid_column does not exist')))
 
             with context('when executing a query with an invalid param'):
                 with it('raises exception from postgres'):
@@ -151,17 +157,7 @@ with description('PostgresClientTest') as self:
                         self.postgresql_client.execute(query, invalid_params)
 
                     expect(_execute_query_with_an_invalid_param).to(
-                        raise_error(psycopg2_errors.InvalidTextRepresentation, contain('invalid input syntax')))
-
-            with context('when executing an empty query'):
-                with it('raises exception from postgres'):
-                    empty_query = ''
-
-                    def _execute_empty_query():
-                        self.postgresql_client.execute(empty_query)
-
-                    expect(_execute_empty_query).to(
-                        raise_error(psycopg2_errors.ProgrammingError, contain('can\'t execute an empty query')))
+                        raise_error(psycopg.errors.InvalidTextRepresentation, contain('invalid input syntax')))
 
             with context('when executing a malformed query'):
                 with it('raises exception from postgres'):
@@ -170,11 +166,11 @@ with description('PostgresClientTest') as self:
                     def _execute_malformed_query():
                         self.postgresql_client.execute(malformed_query)
 
-                    expect(_execute_malformed_query).to(raise_error(psycopg2_errors.SyntaxError, contain('syntax error')))
+                    expect(_execute_malformed_query).to(raise_error(psycopg.errors.SyntaxError, contain('syntax error')))
 
     with description('PostgresClientTest (with dictionary cursor)') as self:
         with before.each:
-            self.postgresql_client = PostgresClient(POSTGRES_DB_URI, cursor_factory=psycopg2.extras.DictCursor)
+            self.postgresql_client = PostgresClient(POSTGRES_DB_URI, cursor_factory=psycopg.rows.dict_row)
             self.postgresql_client.execute(
                 f"DROP TABLE IF EXISTS {TEST_TABLE}"
             )
@@ -193,19 +189,17 @@ with description('PostgresClientTest') as self:
         with context('FEATURE: execute'):
             with context('happy path'):
                 with context('when selecting all rows'):
-                    with it('returns a list containing all rows as (kind of) dictionaries'):
+                    with it('returns a list containing all rows as dictionaries'):
 
                         query = f"SELECT * FROM {TEST_TABLE}"
                         result = self.postgresql_client.execute(query)
 
                         expect(result).to(
                             equal([
-                                [1, 'item_a', 40, False, datetime.datetime(1970, 1, 1, 1, 1, 40)],
-                                [2, 'item_b', 20, True, datetime.datetime(1970, 1, 1, 2, 1, 40)],
+                                {'id': 1, 'item': 'item_a', 'size': 40, 'active': False, 'creation_date': datetime.datetime(1970, 1, 1, 1, 1, 40)},
+                                {'id': 2, 'item': 'item_b', 'size': 20, 'active': True, 'creation_date': datetime.datetime(1970, 1, 1, 2,1, 40)},
                             ])
                         )
-                        expect(result[0]['item']).to(equal('item_a'))
-                        expect(result[1]['item']).to(equal('item_b'))
 
     with context('FEATURE: execute_with_transactions'):
         with before.each:
@@ -234,7 +228,7 @@ with description('PostgresClientTest') as self:
                     def _execute_malformed_query():
                         self.postgresql_client.execute_with_transactions([self.operation_1, self.failing_operation_3])
 
-                    expect(_execute_malformed_query).to(raise_error(psycopg2_errors.InvalidTextRepresentation))
+                    expect(_execute_malformed_query).to(raise_error(psycopg.errors.InvalidTextRepresentation))
 
                 with it('rolls back any changes made until the failure'):
 
@@ -298,4 +292,5 @@ class ContextSpy(Spy):
         return self
 
     def raise_programming_error(self):
-        raise psycopg2.ProgrammingError
+        raise psycopg.errors.ProgrammingError
+

@@ -1,4 +1,4 @@
-import psycopg2 as pg
+import psycopg
 from retrying import retry
 
 
@@ -15,7 +15,7 @@ class PostgresClient:
             try:
                 result = my_cursor.fetchall()
 
-            except pg.ProgrammingError:
+            except psycopg.ProgrammingError:
                 pass
 
         return result
@@ -30,7 +30,7 @@ class PostgresClient:
                 result = my_cursor.fetchall()
                 my_cursor.execute("COMMIT TRANSACTION;")
 
-            except pg.ProgrammingError:
+            except psycopg.ProgrammingError:
                 my_cursor.execute("COMMIT TRANSACTION;")
                 pass
 
@@ -62,4 +62,4 @@ class PostgresClient:
         return self._connect()
 
     def _connect(self):
-        return pg.connect(self._db_uri, cursor_factory=self._cursor_factory)
+        return psycopg.connect(self._db_uri, row_factory=self._cursor_factory)

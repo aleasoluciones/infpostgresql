@@ -1,4 +1,4 @@
-from psycopg2.extras import DictCursor
+import psycopg
 
 from infcommon.factory import Factory
 
@@ -21,5 +21,5 @@ def postgres_client_from_connection_parameters(user=None,
 
 def _cursor_factory(use_dict_cursor=False):
     if use_dict_cursor:
-        return DictCursor
+        return psycopg.rows.dict_row
     return None

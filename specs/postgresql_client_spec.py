@@ -35,5 +35,5 @@ with description('PostgresqlClient specs') as self:
 
         with it('sets dict cursor factory'):
             cursor_factory_name = self.postgres_client._cursor_factory.__name__
-            expect(cursor_factory_name).to(equal('DictCursor'))
+            expect(cursor_factory_name).to(equal('dict_row'))
 
