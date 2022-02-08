@@ -92,9 +92,9 @@ params = (30, True, )
 result = postgres_client.execute(query, params)
 
 # [
-#   {'name: 'Ann', 'surname': 'White', 'age': 18},
+#   {'name': 'Ann', 'surname': 'White', 'age': 18},
 #   {'name': 'Axel', 'surname': 'Schwarz', 'age': 21},
-#   {'name': 'Camille', 'surname': 'Rouge', 'age': '27'}
+#   {'name': 'Camille', 'surname': 'Rouge', 'age': 27}
 # ]
 ```
 
