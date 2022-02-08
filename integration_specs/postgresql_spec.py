@@ -196,8 +196,8 @@ with description('PostgresClientTest') as self:
 
                         expect(result).to(
                             equal([
-                                {'id': 1, 'item': 'item_a', 'size': 40, 'active': False, 'creation_date': datetime.datetime(1970, 1, 1, 1, 1, 40)},
-                                {'id': 2, 'item': 'item_b', 'size': 20, 'active': True, 'creation_date': datetime.datetime(1970, 1, 1, 2,1, 40)},
+                                {'id': 1, 'item': 'item_a', 'size': 40, 'active': False, 'creation_date': datetime.datetime.fromtimestamp(100)},
+                                {'id': 2, 'item': 'item_b', 'size': 20, 'active': True, 'creation_date': datetime.datetime.fromtimestamp(3700)},
                             ])
                         )
 
