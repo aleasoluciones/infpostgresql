@@ -10,18 +10,16 @@ def postgres_client_from_connection_parameters(user=None,
                                                host=None,
                                                port=None,
                                                db_name=None,
-                                               use_dict_cursor=None):
+                                               use_dict_cursor=False):
     connection_uri = f'postgresql://{user}:{password}@{host}:{port}/{db_name}'
-    return _postgres_client(connection_uri, use_dict_cursor)
-
-
-def _postgres_client(connection_uri=None, use_dict_cursor=None):
     cursor_factory = _cursor_factory(use_dict_cursor)
-    instance_id = f'postgres_client_{connection_uri}_{use_dict_cursor}'
-    return Factory.instance(instance_id, lambda: PostgresClient(connection_uri, cursor_factory=cursor_factory))
+    return Factory.instance(
+        f'postgres_client_{connection_uri}_{use_dict_cursor}',
+        lambda: PostgresClient(connection_uri, cursor_factory=cursor_factory)
+    )
 
 
-def _cursor_factory(use_dict_cursor=None):
+def _cursor_factory(use_dict_cursor=False):
     if use_dict_cursor:
         return DictCursor
     return None
