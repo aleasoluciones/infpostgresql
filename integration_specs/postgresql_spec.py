@@ -1,12 +1,13 @@
 from mamba import description, context, before, it
 from expects import expect, equal, contain, raise_error
-from doublex import when, Spy
+from doublex import Spy
 from doublex_expects import have_been_called_with
 
 import datetime
 import os
 
 import psycopg2
+import psycopg2.extras
 from psycopg2 import errors as psycopg2_errors
 
 from infpostgresql.client import PostgresClient
@@ -21,22 +22,30 @@ POSTGRES_DB_URI = f'postgres://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOS
 
 TEST_TABLE = 'test_table'
 
+# pylint: disable=used-before-assignment
+
 with description('PostgresClientTest') as self:
     with before.each:
         self.postgresql_client = PostgresClient(POSTGRES_DB_URI)
-        self.postgresql_client.execute(f"DROP TABLE IF EXISTS {TEST_TABLE}")
+        self.postgresql_client.execute(
+            f"DROP TABLE IF EXISTS {TEST_TABLE}"
+        )
         self.postgresql_client.execute(
             f"CREATE TABLE {TEST_TABLE} (id SERIAL PRIMARY KEY, item varchar(10), size INT, active BOOLEAN, creation_date TIMESTAMP);"
         )
-        self.postgresql_client.execute(f"INSERT INTO {TEST_TABLE}(item, size, active, creation_date) VALUES(%s, %s, %s, %s);",
-                                       ("item_a", 40, False, datetime.datetime.fromtimestamp(100)))
-        self.postgresql_client.execute(f"INSERT INTO {TEST_TABLE}(item, size, active, creation_date) VALUES(%s, %s, %s, %s);",
-                                       ("item_b", 20, True, datetime.datetime.fromtimestamp(3700)))
+        self.postgresql_client.execute(
+            f"INSERT INTO {TEST_TABLE}(item, size, active, creation_date) VALUES(%s, %s, %s, %s);",
+            ("item_a", 40, False, datetime.datetime.fromtimestamp(100))
+        )
+        self.postgresql_client.execute(
+            f"INSERT INTO {TEST_TABLE}(item, size, active, creation_date) VALUES(%s, %s, %s, %s);",
+            ("item_b", 20, True, datetime.datetime.fromtimestamp(3700))
+        )
 
     with context('FEATURE: execute'):
         with context('happy path'):
             with context('when selecting all rows'):
-                with it('returns a list containing all values'):
+                with it('returns a list containing all rows'):
                     query = f"SELECT * FROM {TEST_TABLE}"
 
                     result = self.postgresql_client.execute(query)
@@ -48,7 +57,7 @@ with description('PostgresClientTest') as self:
                         ]))
 
             with context('when counting rows'):
-                with it('returns number of values'):
+                with it('returns number of rows'):
 
                     result = self.postgresql_client.execute(f"SELECT COUNT(*) FROM {TEST_TABLE}")
 
@@ -64,31 +73,62 @@ with description('PostgresClientTest') as self:
                     expect(result).to(equal([]))
 
             with context('when deleting a row'):
-                with it('returns empty list'):
-                    query = f"DELETE FROM {TEST_TABLE} WHERE active = %s;"
-                    params = (False,)
+                with before.each:
+                    self.query_delete = f"DELETE FROM {TEST_TABLE} WHERE item = %s;"
+                    self.params_delete = ('item_a',)
 
-                    result = self.postgresql_client.execute(query, params)
+                with it('returns empty list'):
+
+                    result = self.postgresql_client.execute(self.query_delete, self.params_delete)
 
                     expect(result).to(equal([]))
+
+                with it('deletes the row'):
+                    self.postgresql_client.execute(self.query_delete, self.params_delete)
+
+                    query_select = f"SELECT * FROM {TEST_TABLE};"
+                    result = self.postgresql_client.execute(query_select)
+
+                    expect(result[0][1]).to(equal('item_b'))
 
             with context('when inserting a row'):
-                with it('returns empty list'):
-                    query = f"INSERT INTO {TEST_TABLE}(item, size, active, creation_date) VALUES(%s, %s, %s, %s);"
-                    params = ("item_c", 60, True, datetime.datetime.fromtimestamp(11000))
+                with before.each:
+                    self.query_insert = f"INSERT INTO {TEST_TABLE}(item, size, active, creation_date) VALUES(%s, %s, %s, %s);"
+                    self.params_insert = ("item_c", 60, True, datetime.datetime.fromtimestamp(11000))
 
-                    result = self.postgresql_client.execute(query, params)
+                with it('returns empty list'):
+
+                    result = self.postgresql_client.execute(self.query_insert, self.params_insert)
 
                     expect(result).to(equal([]))
+
+                with it('inserts the row'):
+                    self.postgresql_client.execute(self.query_insert, self.params_insert)
+
+                    query_select = f"SELECT COUNT(*) FROM {TEST_TABLE};"
+                    result = self.postgresql_client.execute(query_select)
+
+                    expect(result[0][0]).to(equal(3))
 
             with context('when updating a row'):
-                with it('returns empty list'):
-                    query = f'UPDATE {TEST_TABLE} SET size = size + %s WHERE {TEST_TABLE}.item = %s;'
-                    params = (10, 'item_a')
+                with before.each:
+                    self.query_update = f'UPDATE {TEST_TABLE} SET size = size + %s WHERE {TEST_TABLE}.item = %s;'
+                    self.params_update = (10, 'item_a')
 
-                    result = self.postgresql_client.execute(query, params)
+                with it('returns empty list'):
+
+                    result = self.postgresql_client.execute(self.query_update, self.params_update)
 
                     expect(result).to(equal([]))
+
+                with it('updates the row'):
+                    self.postgresql_client.execute(self.query_update, self.params_update)
+
+                    query_select = f"SELECT size FROM {TEST_TABLE} WHERE item = %s;"
+                    params_select = ('item_a', )
+                    result = self.postgresql_client.execute(query_select, params_select)
+
+                    expect(result[0][0]).to(equal(50))
 
         with context('unhappy path'):
             with context('when executing a query with an invalid column'):
@@ -131,6 +171,41 @@ with description('PostgresClientTest') as self:
                         self.postgresql_client.execute(malformed_query)
 
                     expect(_execute_malformed_query).to(raise_error(psycopg2_errors.SyntaxError, contain('syntax error')))
+
+    with description('PostgresClientTest (with dictionary cursor)') as self:
+        with before.each:
+            self.postgresql_client = PostgresClient(POSTGRES_DB_URI, cursor_factory=psycopg2.extras.DictCursor)
+            self.postgresql_client.execute(
+                f"DROP TABLE IF EXISTS {TEST_TABLE}"
+            )
+            self.postgresql_client.execute(
+                f"CREATE TABLE {TEST_TABLE} (id SERIAL PRIMARY KEY, item varchar(10), size INT, active BOOLEAN, creation_date TIMESTAMP);"
+            )
+            self.postgresql_client.execute(
+                f"INSERT INTO {TEST_TABLE}(item, size, active, creation_date) VALUES(%s, %s, %s, %s);",
+                ("item_a", 40, False, datetime.datetime.fromtimestamp(100))
+            )
+            self.postgresql_client.execute(
+                f"INSERT INTO {TEST_TABLE}(item, size, active, creation_date) VALUES(%s, %s, %s, %s);",
+                ("item_b", 20, True, datetime.datetime.fromtimestamp(3700))
+            )
+
+        with context('FEATURE: execute'):
+            with context('happy path'):
+                with context('when selecting all rows'):
+                    with it('returns a list containing all rows as (kind of) dictionaries'):
+
+                        query = f"SELECT * FROM {TEST_TABLE}"
+                        result = self.postgresql_client.execute(query)
+
+                        expect(result).to(
+                            equal([
+                                [1, 'item_a', 40, False, datetime.datetime(1970, 1, 1, 1, 1, 40)],
+                                [2, 'item_b', 20, True, datetime.datetime(1970, 1, 1, 2, 1, 40)],
+                            ])
+                        )
+                        expect(result[0]['item']).to(equal('item_a'))
+                        expect(result[1]['item']).to(equal('item_b'))
 
     with context('FEATURE: execute_with_transactions'):
         with before.each:
