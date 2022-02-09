@@ -10,10 +10,10 @@ class PostgresClient:
 
     def execute(self, query, args=None):
         result = []
-        with self._cursor() as my_cursor:
-            my_cursor.execute(query, args)
+        with self._cursor() as cur:
+            cur.execute(query, args)
             try:
-                result = my_cursor.fetchall()
+                result = cur.fetchall()
 
             except psycopg.ProgrammingError:
                 pass
@@ -22,44 +22,40 @@ class PostgresClient:
 
     def execute_with_lock(self, query, table, args=None):
         result = []
-        with self._cursor() as my_cursor:
-            my_cursor.execute("BEGIN TRANSACTION;")
-            my_cursor.execute(f"LOCK TABLE {table} IN ACCESS EXCLUSIVE MODE;")
-            my_cursor.execute(query, args)
+        with self._cursor() as cur:
+            cur.execute("BEGIN TRANSACTION;")
+            cur.execute(f"LOCK TABLE {table} IN ACCESS EXCLUSIVE MODE;")
+            cur.execute(query, args)
             try:
-                result = my_cursor.fetchall()
-                my_cursor.execute("COMMIT TRANSACTION;")
+                result = cur.fetchall()
+                cur.execute("COMMIT TRANSACTION;")
 
             except psycopg.ProgrammingError:
-                my_cursor.execute("COMMIT TRANSACTION;")
-                pass
+                cur.execute("COMMIT TRANSACTION;")
 
         return result
 
     def execute_with_transactions(self, list_of_queries_with_args):
-        with self._cursor(autocommit=False) as my_cursor:
+        with self._cursor(autocommit=False) as cur:
             try:
-                for query_with_arg in list_of_queries_with_args:
-                    query = query_with_arg[0]
-                    args = query_with_arg[1]
-                    my_cursor.execute(query, args)
+                for query_with_args in list_of_queries_with_args:
+                    query = query_with_args[0]
+                    args = query_with_args[1]
+                    cur.execute(query, args)
                 self._connection.commit()
             except Exception as exc:
                 self._connection.rollback()
                 raise exc
 
-    def _cursor(self, retries=True, autocommit=True):
-        if retries:
-            self._connection = self._unreliable_connection()
-        else:
-            self._connection = self._connect()
-
-        self._connection.autocommit = autocommit
+    def _cursor(self, autocommit=True):
+        self._connection = self._unreliable_connection(autocommit)
         return self._connection.cursor()
 
     @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_attempt_number=5)
-    def _unreliable_connection(self):
-        return self._connect()
+    def _unreliable_connection(self, autocommit):
+        return psycopg.connect(
+            self._db_uri,
+            autocommit=autocommit,
+            row_factory=self._cursor_factory,
+        )
 
-    def _connect(self):
-        return psycopg.connect(self._db_uri, row_factory=self._cursor_factory)
