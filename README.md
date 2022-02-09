@@ -98,6 +98,22 @@ result = postgres_client.execute(query, params)
 # ]
 ```
 
+### execute_with_lock()
+
+Works like the normal execute, but keeps a table locked while performing the query.
+
+> postgresql_client.**execute_with_lock**(*query*, *table*, *args*)
+
+➡️ Parameters
+
+- **query**: `str`
+- **table**: `str`
+- **args** (optional): `tuple<any>`. Defaults to `None`.
+
+⬅️ Returns a list of tuples or a list of dictionaries, depending on the value of `use_dict_cursor`. Each item contains a row of results.
+
+💥 Throws any Postgres error converted to CamelCase (available [here](https://www.postgresql.org/docs/12/errcodes-appendix.html), some examples in the [integration tests](integration_specs/postgresql_spec.py)).
+
 ### execute_with_transactions()
 
 Executes multiple SQL queries. Each query can be sent along with their parameters. If any of them fails, the whole process is reversed to ensure the integrity of the transaction.
