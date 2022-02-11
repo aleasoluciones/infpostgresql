@@ -266,7 +266,7 @@ with description('PostgresClientTest') as self:
 
 
 class FakePostgresClient(PostgresClient):
-    def _cursor(self):
+    def _cursor(self, autocommit=True):
         return self._connection.cursor()
 
 
@@ -279,7 +279,7 @@ class FakeConnection:
 
 
 class FakeCursor:
-    def execute(self, query, args=None):
+    def execute(self, query, params=None):
         pass
 
     def fetchall(self):
@@ -293,4 +293,3 @@ class ContextSpy(Spy):
 
     def raise_programming_error(self):
         raise psycopg.errors.ProgrammingError
-

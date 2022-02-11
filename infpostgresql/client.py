@@ -8,10 +8,10 @@ class PostgresClient:
         self._connection = None
         self._cursor_factory = cursor_factory
 
-    def execute(self, query, args=None):
+    def execute(self, query, params=None):
         result = []
         with self._cursor() as cur:
-            cur.execute(query, args)
+            cur.execute(query, params)
             try:
                 result = cur.fetchall()
 
@@ -20,12 +20,12 @@ class PostgresClient:
 
         return result
 
-    def execute_with_lock(self, query, table, args=None):
+    def execute_with_lock(self, query, table, params=None):
         result = []
         with self._cursor() as cur:
             cur.execute("BEGIN TRANSACTION;")
             cur.execute(f"LOCK TABLE {table} IN ACCESS EXCLUSIVE MODE;")
-            cur.execute(query, args)
+            cur.execute(query, params)
             try:
                 result = cur.fetchall()
                 cur.execute("COMMIT TRANSACTION;")
@@ -35,13 +35,13 @@ class PostgresClient:
 
         return result
 
-    def execute_with_transactions(self, list_of_queries_with_args):
+    def execute_with_transactions(self, list_of_queries_with_params):
         with self._cursor(autocommit=False) as cur:
             try:
-                for query_with_args in list_of_queries_with_args:
-                    query = query_with_args[0]
-                    args = query_with_args[1]
-                    cur.execute(query, args)
+                for query_with_params in list_of_queries_with_params:
+                    query = query_with_params[0]
+                    params = query_with_params[1]
+                    cur.execute(query, params)
                 self._connection.commit()
             except Exception as exc:
                 self._connection.rollback()
@@ -58,4 +58,3 @@ class PostgresClient:
             autocommit=autocommit,
             row_factory=self._cursor_factory,
         )
-

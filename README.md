@@ -37,9 +37,7 @@ This design is for the sake of homogeneity, so we can aways use the `execute()` 
 
 Below is described the public API that this library provides.
 
-### \_\_init\_\_()
-
-The client must be initialized with a database URI and an optional argument `use_dict_cursor` which indicates how the output will be returned.
+The client may be initialized using the factory with a database URI and an optional argument `use_dict_cursor` which indicates how the output will be returned.
 
 > postgres_client = factory.**postgres_client_from_connection_uri**(*database_uri*, *use_dict_cursor=False*)
 
@@ -47,12 +45,12 @@ The client must be initialized with a database URI and an optional argument `use
 
 Executes a SQL query and returns the result. Passing parameters is possible by using `%s` placeholders in the SQL query, and passing a sequence of values as the second argument of the function.
 
-> postgresql_client.**execute**(*query*, *args*)
+> postgresql_client.**execute**(*query*, *params*)
 
 ➡️ Parameters
 
 - **query**: `str`
-- **args** (optional): `tuple<any>`. Defaults to `None`.
+- **params** (optional): `tuple<any>`. Defaults to `None`.
 
 ⬅️ Returns a list of tuples or a list of dictionaries, depending on the value of `use_dict_cursor`. Each item contains a row of results.
 
@@ -102,13 +100,13 @@ result = postgres_client.execute(query, params)
 
 Works like the normal execute, but keeps a table locked while performing the query.
 
-> postgresql_client.**execute_with_lock**(*query*, *table*, *args*)
+> postgresql_client.**execute_with_lock**(*query*, *table*, *params*)
 
 ➡️ Parameters
 
 - **query**: `str`
 - **table**: `str`
-- **args** (optional): `tuple<any>`. Defaults to `None`.
+- **params** (optional): `tuple<any>`. Defaults to `None`.
 
 ⬅️ Returns a list of tuples or a list of dictionaries, depending on the value of `use_dict_cursor`. Each item contains a row of results.
 
@@ -118,11 +116,11 @@ Works like the normal execute, but keeps a table locked while performing the que
 
 Executes multiple SQL queries. Each query can be sent along with their parameters. If any of them fails, the whole process is reversed to ensure the integrity of the transaction.
 
-> postgresql_client.**execute_with_transactions**(*list_of_queries_with_args*)
+> postgresql_client.**execute_with_transactions**(*list_of_queries_with_params*)
 
 ➡️ Parameters
 
-- **list_of_queries_with_args**: `list<tuple<str, tuple<any>>>`
+- **list_of_queries_with_params**: `list<tuple<str, tuple<any>>>`
 
 ⬅️ Returns nothing
 
