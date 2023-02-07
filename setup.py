@@ -9,7 +9,6 @@ setup(name="infpostgresql",
       install_requires=[
           'psycopg==3.0.8',
           'retrying==1.3.3',
-          'windyquery==0.0.28',
           'infcommon'
       ],
       dependency_links=[
