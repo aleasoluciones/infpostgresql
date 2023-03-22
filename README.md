@@ -1,7 +1,7 @@
 # infpostgresql
 
-[![Build Status](https://travis-ci.com/aleasoluciones/infpostgresql.svg?branch=master)](https://travis-ci.com/aleasoluciones/infpostgresql)
-![Python versions supported](https://img.shields.io/badge/supports%20python-3.7%20|%203.8%20|%203.9-blue.svg)
+[![CI](https://github.com/aleasoluciones/infpostgresql/actions/workflows/ci.yml/badge.svg](https://github.com/aleasoluciones/infpostgresql/actions/workflows/ci.yml)
+![Python versions supported](https://img.shields.io/badge/supports%20python-3.9%20|%203.10%20|%203.11-blue.svg)
 
 Wrapper for the [psycopg](https://www.psycopg.org) library using Python 3.
 
