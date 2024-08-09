@@ -10,6 +10,7 @@ import psycopg
 
 from infpostgresql.client import PostgresClient
 
+
 POSTGRES_HOSTNAME = os.getenv('POSTGRES_HOSTNAME')
 POSTGRES_PORT = os.getenv('POSTGRES_PORT')
 POSTGRES_USER = os.getenv('POSTGRES_USER')
@@ -75,11 +76,11 @@ with description('PostgresClientTest') as self:
                     self.query_delete = f"DELETE FROM {TEST_TABLE} WHERE item = %s;"
                     self.params_delete = ('item_a',)
 
-                with it('returns empty list'):
+                with it('returns number of deleted rows'):
 
                     result = self.postgresql_client.execute(self.query_delete, self.params_delete)
 
-                    expect(result).to(equal([]))
+                    expect(result).to(equal(1))
 
                 with it('deletes the row'):
                     self.postgresql_client.execute(self.query_delete, self.params_delete)
@@ -94,15 +95,16 @@ with description('PostgresClientTest') as self:
                     self.query_insert = f"INSERT INTO {TEST_TABLE}(item, size, active, creation_date) VALUES(%s, %s, %s, %s);"
                     self.params_insert = ("item_c", 60, True, datetime.datetime.fromtimestamp(11000))
 
-                with it('returns empty list'):
+                with it('returns number of inserted rows'):
 
                     result = self.postgresql_client.execute(self.query_insert, self.params_insert)
 
-                    expect(result).to(equal([]))
+                    expect(result).to(equal(1))
 
                 with it('inserts the row'):
-                    self.postgresql_client.execute(self.query_insert, self.params_insert)
-
+                    insert_result = self.postgresql_client.execute(self.query_insert, self.params_insert)
+                    
+                    expect(insert_result).to(equal(1))
                     query_select = f"SELECT COUNT(*) FROM {TEST_TABLE};"
                     result = self.postgresql_client.execute(query_select)
 
@@ -113,11 +115,11 @@ with description('PostgresClientTest') as self:
                     self.query_update = f'UPDATE {TEST_TABLE} SET size = size + %s WHERE {TEST_TABLE}.item = %s;'
                     self.params_update = (10, 'item_a')
 
-                with it('returns empty list'):
+                with it('returns number of updated rows'):
 
                     result = self.postgresql_client.execute(self.query_update, self.params_update)
 
-                    expect(result).to(equal([]))
+                    expect(result).to(equal(1))
 
                 with it('updates the row'):
                     self.postgresql_client.execute(self.query_update, self.params_update)

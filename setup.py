@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name="infpostgresql",
-      version="0.0.1",
+      version="0.0.2",
       author="Bifer Team",
       description="Postgres wrapper",
       platforms="Linux",

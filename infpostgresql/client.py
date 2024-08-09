@@ -8,12 +8,16 @@ class PostgresClient:
         self._connection = None
         self._cursor_factory = cursor_factory
 
-    def execute(self, query, params=None):
+    def execute(self, query: str, params: dict =None) -> list:
         result = []
         with self._cursor() as cur:
             cur.execute(query, params)
             try:
-                result = cur.fetchall()
+                if cur.description:
+                    result = cur.fetchall()
+                else:
+                    if cur.rowcount >= 0:
+                        result = cur.rowcount
 
             except psycopg.ProgrammingError:
                 pass
