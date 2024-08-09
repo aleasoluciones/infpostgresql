@@ -1,12 +1,12 @@
-from mamba import description, context, before, it
+import io
+import logging
+import datetime
+import os
+import psycopg
+from mamba import description, context, before, after, it
 from expects import expect, equal, contain, raise_error
 from doublex import Spy
 from doublex_expects import have_been_called_with
-
-import datetime
-import os
-
-import psycopg
 
 from infpostgresql.client import PostgresClient
 
@@ -15,15 +15,31 @@ POSTGRES_PORT = os.getenv('POSTGRES_PORT')
 POSTGRES_USER = os.getenv('POSTGRES_USER')
 POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
 POSTGRES_DB = os.getenv('POSTGRES_DB')
-
 POSTGRES_DB_URI = f'postgres://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOSTNAME}:{POSTGRES_PORT}/{POSTGRES_DB}'
 
 TEST_TABLE = 'test_table'
 
-# pylint: disable=used-before-assignment
+# Set up the logger
+logger = logging.getLogger()
+
+def setup_logger():
+    logger.setLevel(logging.INFO)
+
+    log_stream = logging.StreamHandler()
+    log_stream.setLevel(logging.INFO)
+
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    log_stream.setFormatter(formatter)
+    logger.addHandler(log_stream)
+
+    log_capture_string = io.StringIO()
+    log_stream.setStream(log_capture_string)
+
+    return log_stream
 
 with description('PostgresClientTest') as self:
     with before.each:
+        
         self.postgresql_client = PostgresClient(POSTGRES_DB_URI)
         self.postgresql_client.execute(
             f"DROP TABLE IF EXISTS {TEST_TABLE}"
@@ -40,6 +56,19 @@ with description('PostgresClientTest') as self:
             ("item_b", 20, True, datetime.datetime.fromtimestamp(3700))
         )
 
+        # Create a string IO to capture logs
+        self.log_capture_string = io.StringIO()
+        
+        self.logger_stream = setup_logger()
+        
+        # Redirect the stream to the string IO
+        self.logger_stream.setStream(self.log_capture_string)
+    
+    with after.each:
+        logger.removeHandler(self.logger_stream)
+        self.log_capture_string.close()
+        
+        
     with context('FEATURE: execute'):
         with context('happy path'):
             with context('when selecting all rows'):
@@ -53,7 +82,24 @@ with description('PostgresClientTest') as self:
                             (1, 'item_a', 40, False, datetime.datetime.fromtimestamp(100)),
                             (2, 'item_b', 20, True, datetime.datetime.fromtimestamp(3700)),
                         ]))
+                    
+                    
 
+            with context('When running a query with parameters'):
+                with it('logs the query'):
+                    query = f"SELECT * FROM {TEST_TABLE}"
+
+                    result = self.postgresql_client.execute(query)
+
+                    expect(result).to(
+                        equal([
+                            (1, 'item_a', 40, False, datetime.datetime.fromtimestamp(100)),
+                            (2, 'item_b', 20, True, datetime.datetime.fromtimestamp(3700)),
+                        ]))
+                    
+                    log_contents = self.log_capture_string.getvalue().split('\n')
+                    expect(log_contents[1]).to(contain('SELECT * FROM test_table'))
+                    
             with context('when counting rows'):
                 with it('returns number of rows'):
 

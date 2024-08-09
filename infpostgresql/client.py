@@ -1,6 +1,8 @@
 import psycopg
 from retrying import retry
 
+from infpostgresql.debugger import debug_sql_call
+
 
 class PostgresClient:
     def __init__(self, db_uri, cursor_factory=None):
@@ -8,6 +10,7 @@ class PostgresClient:
         self._connection = None
         self._cursor_factory = cursor_factory
 
+    @debug_sql_call
     def execute(self, query, params=None):
         result = []
         with self._cursor() as cur:
