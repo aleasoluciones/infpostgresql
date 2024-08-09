@@ -22,6 +22,9 @@ Run a PostgreSQL Docker container.
 ```python
 dev/start_local_dependencies.sh
 ```
+### Debug. 
+
+You can now debug queries made by setting the POSTGRE_DEBUG env variable as True
 
 ### Running tests, linter & formatter and configure git hooks
 
