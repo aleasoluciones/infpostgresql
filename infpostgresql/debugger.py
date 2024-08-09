@@ -11,7 +11,7 @@ def get_params_val(param_val):
         param_val = f"'{param_val}'"
     return str(param_val)
 
-def build_query(query:str, params: dict|tuple|None = None):
+def build_query(query:str, params = None):
     if params:
         if isinstance(params, dict):
             for param, param_val in params.items():
