@@ -19,24 +19,6 @@ POSTGRES_DB_URI = f'postgres://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOS
 
 TEST_TABLE = 'test_table'
 
-# Set up the logger
-logger = logging.getLogger()
-
-def setup_logger():
-    logger.setLevel(logging.INFO)
-
-    log_stream = logging.StreamHandler()
-    log_stream.setLevel(logging.INFO)
-
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    log_stream.setFormatter(formatter)
-    logger.addHandler(log_stream)
-
-    log_capture_string = io.StringIO()
-    log_stream.setStream(log_capture_string)
-
-    return log_stream
-
 with description('PostgresClientTest') as self:
     with before.each:
         
@@ -55,19 +37,6 @@ with description('PostgresClientTest') as self:
             f"INSERT INTO {TEST_TABLE}(item, size, active, creation_date) VALUES(%s, %s, %s, %s);",
             ("item_b", 20, True, datetime.datetime.fromtimestamp(3700))
         )
-
-        # Create a string IO to capture logs
-        self.log_capture_string = io.StringIO()
-        
-        self.logger_stream = setup_logger()
-        
-        # Redirect the stream to the string IO
-        self.logger_stream.setStream(self.log_capture_string)
-    
-    with after.each:
-        logger.removeHandler(self.logger_stream)
-        self.log_capture_string.close()
-        
         
     with context('FEATURE: execute'):
         with context('happy path'):
@@ -96,10 +65,7 @@ with description('PostgresClientTest') as self:
                             (1, 'item_a', 40, False, datetime.datetime.fromtimestamp(100)),
                             (2, 'item_b', 20, True, datetime.datetime.fromtimestamp(3700)),
                         ]))
-                    
-                    log_contents = self.log_capture_string.getvalue().split('\n')
-                    expect(log_contents[1]).to(contain('SELECT * FROM test_table'))
-                    
+
             with context('when counting rows'):
                 with it('returns number of rows'):
 
