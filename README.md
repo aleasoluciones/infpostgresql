@@ -22,15 +22,15 @@ Run a PostgreSQL Docker container.
 ```python
 dev/start_local_dependencies.sh
 ```
-### Debug. 
+### Debug.
 
 You can now debug queries made by setting the POSTGRES_DEBUG env variable as True
 
-To set the variable you can do a 
+To set the variable you can do a
 ```bash
 export POSTGRES_DEBUG=True
 ```
-or set the varaible in `dev/env_develop`  
+or set the varaible in `dev/env_develop`
 **Important**: true with Capital case **T**rue
 
 
