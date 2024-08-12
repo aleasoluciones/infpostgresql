@@ -27,7 +27,17 @@ def print_query(query, params, end_time, start_time):
     logging.info(f"Query took {end_time - start_time} seconds to execute")
     logging.info('#'*35)
     
-    
+
+def get_params_str(*args, **kwargs):
+    if len(args) > 1:
+        query = args[1]
+        params = None
+    if len(args) > 2:
+        params = args[2]
+    elif kwargs:
+        query = kwargs.get('query')
+        params = kwargs.get('params')
+    return query, params        
     
 def debug_sql_call(func):
     def wrapper(*args, **kwargs):
@@ -38,18 +48,39 @@ def debug_sql_call(func):
         result = func(*args, **kwargs)
         end_time = time.time()
         
-        if len(args) > 1:
-            query = args[1]
-            params = None
-        if len(args) > 2:
-            params = args[2]
-        elif kwargs:
-            query = kwargs.get('query')
-            params = kwargs.get('params')
+        query, params = get_params_str(*args, **kwargs)
         try:
             print_query(query, params, end_time, start_time)
         except Exception:
             logging.error('Could not print query', exc_info=True)
             
+        return result
+    return wrapper
+
+
+def debug_sql_transaction_calls(func):
+    def wrapper(*args, **kwargs):
+        if not POSTGRE_DEBUG:
+            return func(*args, **kwargs)    
+        
+        
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        
+        if kwargs:
+            query_params = kwargs.get('list_of_queries_with_params')
+        else:
+            query_params = args[1]
+
+        try:
+            logging.info(f"-----------Executing transaction query---------------------")
+            for query, param in query_params:
+                query, params = get_params_str(query=query, params=param)
+                print_query(query, params, end_time, start_time)
+            logging.info(f"----------------------------------------------------------------")
+        except Exception:
+            logging.error('Could not print query', exc_info=True)
+                                
         return result
     return wrapper
