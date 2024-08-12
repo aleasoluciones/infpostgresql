@@ -1,7 +1,7 @@
 import psycopg
 from retrying import retry
 
-from infpostgresql.debugger import debug_sql_call
+from infpostgresql.debugger import debug_sql_call, debug_sql_transaction_calls
 
 
 class PostgresClient:
@@ -37,7 +37,8 @@ class PostgresClient:
                 cur.execute("COMMIT TRANSACTION;")
 
         return result
-
+    
+    @debug_sql_transaction_calls
     def execute_with_transactions(self, list_of_queries_with_params):
         with self._cursor(autocommit=False) as cur:
             try:
