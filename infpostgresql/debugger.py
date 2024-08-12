@@ -5,31 +5,31 @@ from infcommon import logger
 
 
 # make a better debugging variable
-POSTGRE_DEBUG = os.getenv('POSTGRES_DEBUG', 'False') == 'True'
+POSTGRES_DEBUG = os.getenv('POSTGRES_DEBUG', 'False') == 'True'
 
-def get_params_val(param_val):
+def _get_params_val(param_val):
     if isinstance(param_val, str):
         param_val = f"'{param_val}'"
     return str(param_val)
 
-def build_query(query:str, params = None):
+def _build_query(query:str, params = None):
     if params:
         if isinstance(params, dict):
             for param, param_val in params.items():
-                query =  query.replace(f'%({param})s', get_params_val(param_val))
+                query =  query.replace(f'%({param})s', _get_params_val(param_val))
         else:
             for param_val in params:
-                query =  query.replace('%s',  get_params_val(param_val),1)
+                query =  query.replace('%s',  _get_params_val(param_val),1)
     return query
 
-def print_query(query, params, end_time, start_time):
+def _print_query(query, params, end_time, start_time):
     logger.info(f"{'#'*10}POSTGRES QUERY {'#'*10}")
-    logger.info(build_query(query, params))
+    logger.info(_build_query(query, params))
     logger.info(f"Query took {end_time - start_time} seconds to execute")
     logger.info('#'*35)
 
 
-def get_params_str(*args, **kwargs):
+def _get_params_str(*args, **kwargs):
     if len(args) > 1:
         query = args[1]
         params = None
@@ -42,16 +42,16 @@ def get_params_str(*args, **kwargs):
 
 def debug_sql_call(func):
     def wrapper(*args, **kwargs):
-        if not POSTGRE_DEBUG:
+        if not POSTGRES_DEBUG:
             return func(*args, **kwargs)
 
         start_time = time.time()
         result = func(*args, **kwargs)
         end_time = time.time()
 
-        query, params = get_params_str(*args, **kwargs)
+        query, params = _get_params_str(*args, **kwargs)
         try:
-            print_query(query, params, end_time, start_time)
+            _print_query(query, params, end_time, start_time)
         except Exception:
             logger.error('Could not print query', exc_info=True)
 
@@ -61,7 +61,7 @@ def debug_sql_call(func):
 
 def debug_sql_transaction_calls(func):
     def wrapper(*args, **kwargs):
-        if not POSTGRE_DEBUG:
+        if not POSTGRES_DEBUG:
             return func(*args, **kwargs)
 
 
@@ -77,8 +77,8 @@ def debug_sql_transaction_calls(func):
         try:
             logger.info(f"-----------Executing transaction query---------------------")
             for query, param in query_params:
-                query, params = get_params_str(query=query, params=param)
-                print_query(query, params, end_time, start_time)
+                query, params = _get_params_str(query=query, params=param)
+                _print_query(query, params, end_time, start_time)
             logger.info(f"----------------------------------------------------------------")
         except Exception:
             logger.error('Could not print query', exc_info=True)
