@@ -24,7 +24,15 @@ dev/start_local_dependencies.sh
 ```
 ### Debug. 
 
-You can now debug queries made by setting the POSTGRE_DEBUG env variable as True
+You can now debug queries made by setting the POSTGRES_DEBUG env variable as True
+
+To set the variable you can do a 
+```bash
+export POSTGRES_DEBUG=True
+```
+or set the varaible in `dev/env_develop`  
+**Important**: true with Capital case **T**rue
+
 
 ### Running tests, linter & formatter and configure git hooks
 
