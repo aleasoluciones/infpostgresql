@@ -1,12 +1,10 @@
-import io
-import logging
 import datetime
 import os
 import psycopg
-from mamba import description, context, before, after, it
+from mamba import description, context, before, it
 from expects import expect, equal, contain, raise_error
 from doublex import Spy
-from doublex_expects import have_been_called_with
+from doublex_expects import have_been_called_with, have_been_called
 
 from infpostgresql.client import PostgresClient
 
@@ -21,7 +19,7 @@ TEST_TABLE = 'test_table'
 
 with description('PostgresClientTest') as self:
     with before.each:
-        
+
         self.postgresql_client = PostgresClient(POSTGRES_DB_URI)
         self.postgresql_client.execute(
             f"DROP TABLE IF EXISTS {TEST_TABLE}"
@@ -37,7 +35,7 @@ with description('PostgresClientTest') as self:
             f"INSERT INTO {TEST_TABLE}(item, size, active, creation_date) VALUES(%s, %s, %s, %s);",
             ("item_b", 20, True, datetime.datetime.fromtimestamp(3700))
         )
-        
+
     with context('FEATURE: execute'):
         with context('happy path'):
             with context('when selecting all rows'):
@@ -51,8 +49,8 @@ with description('PostgresClientTest') as self:
                             (1, 'item_a', 40, False, datetime.datetime.fromtimestamp(100)),
                             (2, 'item_b', 20, True, datetime.datetime.fromtimestamp(3700)),
                         ]))
-                    
-                    
+
+
 
             with context('When running a query with parameters'):
                 with it('logs the query'):
@@ -252,10 +250,11 @@ with description('PostgresClientTest') as self:
 
     with context('FEATURE: execute with locks'):
         with before.each:
-            self.fake_cursor = ContextSpy(FakeCursor())
-            fake_connection = FakeConnection(self.fake_cursor)
+            self.fake_cursor = ContextCursorSpy(FakeCursor())
+            self.fake_connection = ContextConnectionSpy(FakeConnection(self.fake_cursor))
+            self.fake_pool_connection = FakePoolConnection(self.fake_connection)
             self.postgresql_client = FakePostgresClient(POSTGRES_DB_URI)
-            self.postgresql_client._connection = fake_connection
+            self.postgresql_client._pool = self.fake_pool_connection
             self.query = f"SELECT * FROM {TEST_TABLE};"
 
         with context('happy path'):
@@ -265,7 +264,7 @@ with description('PostgresClientTest') as self:
 
                     expect(self.fake_cursor.execute).to(have_been_called_with("BEGIN TRANSACTION;"))
                     expect(self.fake_cursor.execute).to(have_been_called_with(f"LOCK TABLE {TEST_TABLE} IN ACCESS EXCLUSIVE MODE;"))
-                    expect(self.fake_cursor.execute).to(have_been_called_with("COMMIT TRANSACTION;"))
+                    expect(self.fake_connection.commit).to(have_been_called)
 
         with context('unhappy path'):
             with context('when Programming error arises'):
@@ -274,7 +273,7 @@ with description('PostgresClientTest') as self:
 
                     self.postgresql_client.execute_with_lock(self.query, TEST_TABLE)
 
-                    expect(self.fake_cursor.execute).to(have_been_called_with("COMMIT TRANSACTION;"))
+                    expect(self.fake_connection.commit).to(have_been_called)
 
 
 class FakePostgresClient(PostgresClient):
@@ -286,11 +285,17 @@ class FakeConnection:
     def __init__(self, fake_cursor):
         self._fake_cursor = fake_cursor
 
-    def cursor(self):
-        return self._fake_cursor
+    def commit(self):
+        pass
+
+    def rollback(self):
+        pass
 
 
 class FakeCursor:
+    def __init__(self):
+        self.description = None
+
     def execute(self, query, params=None):
         pass
 
@@ -298,10 +303,26 @@ class FakeCursor:
         pass
 
 
+class FakePoolConnection:
+    def __init__(self, connection):
+        self._connection = connection
+
+    def connection(self):
+        return self._connection
+
+
 # We have to override __enter__ to avoid problems with doublex context manager (https://github.com/davidvilla/python-doublex/issues/9)
-class ContextSpy(Spy):
+class ContextCursorSpy(Spy):
     def __enter__(self):
         return self
 
     def raise_programming_error(self):
         raise psycopg.errors.ProgrammingError
+
+
+class ContextConnectionSpy(Spy):
+    def __enter__(self):
+        return self
+
+    def cursor(self, row_factory=None):
+        return self._fake_cursor

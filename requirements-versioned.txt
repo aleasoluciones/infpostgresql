@@ -1,2 +1,3 @@
 psycopg==3.0.8
 retrying==1.3.3
+psycopg-pool==3.2.4
