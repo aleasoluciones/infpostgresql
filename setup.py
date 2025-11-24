@@ -8,7 +8,7 @@ setup(name="infpostgresql",
       packages=find_packages(exclude=["specs", "integration_specs"]),
       install_requires=[
           'psycopg==3.2.13',
-          'psycopg-pool==3.2.7',
+          'psycopg-pool==3.2.8',
           'retrying==1.4.2',
           'infcommon'
       ],
